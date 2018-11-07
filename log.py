@@ -17,7 +17,7 @@ def query_results(sql_query):
 
 
 def print_results(query):
-    for i in range(len(query)):
+    for i in xrange(len(query)):
         title = query[i][0]
         result = query[i][1]
         print '\t' + '%s - %s' % (title, result)
