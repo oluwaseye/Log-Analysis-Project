@@ -1,31 +1,48 @@
-# !/usr/bin/env python
-
+import time
 import psycopg2
 
 DATABASE = "news"
 
-first_request = "What are the most popular articles of all time?"
+def query_results(sql_query):
+    db = psycopg2.connect(database=DATABASE)
+    c = db.cursor()
+    c.execute(sql_query)
+    results = c.fetchall()
+    db.close()
+    return results
 
-first_query = "SELECT articles.title, COUNT(*) as views FROM articles \
-               JOIN log ON log.path LIKE '%200%' \
-               GROUP BY articles.title, log.path ORDER BY views DESC LIMIT 3 "
+def print_results(query):
+      for i in range(len(query)):
+          title = query[i][0]
+          result = query[i][1]
+          print("\t" + "%s - %s" % (title, result))
 
-second_request = "Who are the most popular article authors of all time?"
+dictonary = {
+    "\nWhat are the most popular articles of all time?":
+    "SELECT title, CONCAT(COUNT(*), ' views') AS view_count, COUNT(*) AS views FROM articles \
+                JOIN log\
+                ON articles.slug = substring(log.path, 10)\
+                GROUP BY title ORDER BY views DESC LIMIT 3;",
 
-second_query = "SELECT authors.name, count(*) as views\
-           	    FROM articles \
-           	    JOIN authors\
-           	    ON articles.author = authors.id \
+    "\nWho are the most popular article authors of all time?":
+    "SELECT authors.name, CONCAT(COUNT(*), ' views') AS view_count, COUNT(*) AS views \
+                FROM articles \
+                JOIN authors\
+                ON articles.author = authors.id \
                 JOIN log \
                 ON articles.slug = substring(log.path, 10)\
-                WHERE log.status LIKE '%200 OK%'\
-                GROUP BY authors.name ORDER BY views DESC;"
+                WHERE log.status LIKE '200 OK'\
+                GROUP BY authors.name ORDER BY views DESC;",
 
-third_request = "On which days more than 1% of the requests led to error?"
+     "\nOn which days did more than 1 percent of the requests led to errors?" :
+     "SELECT to_char(log_data.day, 'Mon DD, YYYY') AS Day, \
+        CONCAT(ROUND((100.0*log_data.error/log_data.total_data), 2), '%' ) AS Percentage \
+          FROM  (SELECT count(id) AS total_data, date_trunc('day', time) AS day, \
+          SUM(CASE WHEN log.status = '404 NOT FOUND' THEN 1 else 0 END) AS error FROM log GROUP BY day) AS log_data \
+          WHERE ROUND((100.0*log_data.error/log_data.total_data), 3) > 1;"     
+}
 
-third_query =  "SELECT to_char(log_data.day, 'Mon DD, YYYY') AS Day, \
-				CONCAT(ROUND((100.0*log_data.error/log_data.total_data), 2), '%' ) AS Percentage \
-     			FROM  (SELECT count(id) AS total_data, date_trunc('day', time) AS day, \
-     			SUM(CASE WHEN log.status = '404 NOT FOUND' THEN 1 else 0 END) AS error FROM log GROUP BY day) AS log_data \
-     			WHERE ROUND((100.0*log_data.error/log_data.total_data), 3) > 1;"
-
+for request, query in dictonary.items():
+  print ( request )
+  print_results(query_results( query )) 
+  print('\n')
