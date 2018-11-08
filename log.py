@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import time
@@ -16,10 +16,10 @@ def query_results(sql_query):
     return results
 
 
-def print_results(query):
-    for i in xrange(len(query)):
-        title = query[i][0]
-        result = query[i][1]
+def print_results(query_result):
+    for i in xrange(len(query_result)):
+        title = query_result[i][0]
+        result = query_result[i][1]
         print '\t' + '%s - %s' % (title, result)
 
 
